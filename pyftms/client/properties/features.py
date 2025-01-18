@@ -149,8 +149,18 @@ async def read_features(cli: BleakClient) -> tuple[MachineFeatures, MachineSetti
 
         bio, u4 = io.BytesIO(data), NumSerializer("u4")
 
-        features = MachineFeatures(u4.deserialize(bio))
-        settings = MachineSettings(u4.deserialize(bio))
+        try:
+            features = MachineFeatures(u4.deserialize(bio))
+            settings = MachineSettings(u4.deserialize(bio))
+
+        except ValueError as e:
+            _LOGGER.exception('Failed reading machine features and settings.')
+            _LOGGER.exception(e)
+            _LOGGER.exception('Checking for buggy implementation...')
+            bio.seek(0)
+            bio_r = io.BytesIO(bytes([int('{:08b}'.format(b)[::-1], 2) for b in bio.read()]))
+            features = MachineFeatures(u4.deserialize(bio_r))
+            settings = MachineSettings(u4.deserialize(bio_r))
 
     except Exception:
         _LOGGER.exception("Failed reading machine features and settings.")
