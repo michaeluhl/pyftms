@@ -148,7 +148,7 @@ async def read_features(cli: BleakClient) -> tuple[MachineFeatures, MachineSetti
         assert len(data) == 8
 
         #check for buggy implementation where bits are reversed
-        if data[2] > (0x01).to_bytes(1):
+        if data[2] > 0x01:
             data = bytes([int('{:08b}'.format(b)[::-1], 2) for b in data])
 
         bio, u4 = io.BytesIO(data), NumSerializer("u4")
