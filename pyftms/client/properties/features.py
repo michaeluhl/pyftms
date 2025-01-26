@@ -147,20 +147,14 @@ async def read_features(cli: BleakClient) -> tuple[MachineFeatures, MachineSetti
 
         assert len(data) == 8
 
+        #check for buggy implementation where bits are reversed
+        if data[2] > (0x01).to_bytes(1):
+            data = bytes([int('{:08b}'.format(b)[::-1], 2) for b in data])
+
         bio, u4 = io.BytesIO(data), NumSerializer("u4")
 
-        try:
-            features = MachineFeatures(u4.deserialize(bio))
-            settings = MachineSettings(u4.deserialize(bio))
-
-        except ValueError as e:
-            _LOGGER.exception('Failed reading machine features and settings.')
-            _LOGGER.exception(e)
-            _LOGGER.exception('Checking for buggy implementation...')
-            bio.seek(0)
-            bio_r = io.BytesIO(bytes([int('{:08b}'.format(b)[::-1], 2) for b in bio.read()]))
-            features = MachineFeatures(u4.deserialize(bio_r))
-            settings = MachineSettings(u4.deserialize(bio_r))
+        features = MachineFeatures(u4.deserialize(bio))
+        settings = MachineSettings(u4.deserialize(bio))
 
     except Exception:
         _LOGGER.exception("Failed reading machine features and settings.")
